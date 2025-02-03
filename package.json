@@ -12,5 +12,8 @@
   "description": "",
   "dependencies": {
     "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0"
   }
 }
