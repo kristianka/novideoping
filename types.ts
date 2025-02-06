@@ -11,3 +11,11 @@ export interface DataResponse {
         }
     ];
 }
+
+export interface SkuDataResponse {
+    searchedProducts: {
+        productDetails: {
+            internalLink: string;
+        }[];
+    };
+}

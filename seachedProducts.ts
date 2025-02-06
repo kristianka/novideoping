@@ -1,47 +1,22 @@
 import open from "open";
-import { DataResponse } from "./types";
+import { DataResponse, SkuDataResponse } from "./types";
 import { askQuestion, rl } from "./helpers";
 
 let wait = 10000; // 10 seconds, you may get IP banned if you set this too low
 let firstRun = true;
-let sku = "PRO580GFTNV"; // can't be harcoded anymore since changes so frequently
+let sku = "5080";
 let locale = "fi-fi";
-let url = "";
 
+let url = "";
 const main = async () => {
-    let oldData: DataResponse = {
-        success: false,
-        map: {},
-        listMap: [
-            {
-                is_active: false,
-                product_url: "",
-                price: "",
-                fe_sku: "",
-                locale: ""
-            }
-        ]
-    };
+    let oldData;
 
     // ask which to track
     try {
         console.log("\n👋 Welcome to the Nvidia GPU tracker!");
-        console.log(
-            "❓ This script will track the availability of the RTX 5080 FE or RTX 5090 FE on the Nvidia store."
-        );
-        console.log(
-            "🌍 A browser window will open when the product is in stock. Be ready to buy! 🚀"
-        );
-        console.log(
-            "😩 Please note that this script may fail if Nvidia changes their API and SKUs (like they have!). The API can throw some errors, which usually means you are being ratelimited. In that case, you should increase the wait time between requests."
-        );
-        console.log(
-            "❕I recommended checking the GitHub repository once in a while to see if the SKUs have changed: https://github.com/kristianka/novideoping"
-        );
-        console.log("\nPlease answer the following questions to start tracking. Good luck! 🍀");
+        console.log("❓ This script will track the SKU changes in NVIDIA API.");
 
-        const answer1 = await askQuestion("Please insert the SKU you want to track.\n");
-        sku = answer1;
+        sku = await askQuestion("Do you want to track the RTX 5080 FE or the 5090 FE?\n");
 
         const answer2 = await askQuestion(
             "How often do you want to check for changes? (in seconds). Under 10 is not recommended to avoid IP bans!\n"
@@ -59,9 +34,9 @@ const main = async () => {
         );
 
         locale = answer3;
-        url = `https://api.store.nvidia.com/partner/v1/feinventory?skus=${sku}&locale=${locale}`;
+        url = `https://api.nvidia.partners/edge/product/search?page=1&limit=12&locale=${locale}&gpu=RTX%20${sku}&gpu_filter=RTX%205090~1,RTX%20${sku}~1&category=GPU`;
 
-        console.log(`Tracking ${sku} from ${locale} every ${wait / 1000} seconds...`);
+        console.log(`Tracking ${sku} SKU changes from ${locale} every ${wait / 1000} seconds...`);
         console.log(`\nPlease make sure the generated URL is correct: ${url}\n`);
         rl.close();
     } catch (error) {
@@ -73,7 +48,7 @@ const main = async () => {
     setInterval(async () => {
         try {
             const res = await fetch(url);
-            const data: DataResponse = await res.json();
+            const data: SkuDataResponse = await res.json();
             const now = new Date().toLocaleTimeString();
 
             if (JSON.stringify(data) !== JSON.stringify(oldData)) {
@@ -90,8 +65,8 @@ const main = async () => {
                 oldData = data;
 
                 // open browser
-                const url = data.listMap[0].product_url
-                    ? data.listMap[0].product_url
+                const url = data.searchedProducts.productDetails[0].internalLink
+                    ? data.searchedProducts.productDetails[0].internalLink
                     : `https://marketplace.nvidia.com/${locale}/consumer/graphics-cards/`;
                 await open(url);
 
